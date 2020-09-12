@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/CindiJava.iml" filepath="$PROJECT_DIR$/CindiJava.iml" />
+      <module fileurl="file://$PROJECT_DIR$/SampleBot/SampleBot.iml" filepath="$PROJECT_DIR$/SampleBot/SampleBot.iml" />
     </modules>
   </component>
 </project>

@@ -1,20 +1,18 @@
 package com.cindi.domain;
 
+import java.util.*;
+
 public class Step {
-    public Step();
-    public string Name;
-    public string Description;
-    public Guid? WorkflowId;
-        [Required]
-    public string StepTemplateId;
-    public Dictionary<string, object> Inputs;
-    public DateTime? CompletedOn;
-    public string Status;
-    public Dictionary<string, object> Outputs;
+    public UUID Id;
+    public String Name;
+    public String Description;
+    public UUID WorkflowId;
+    public String StepTemplateId;
+    public HashMap<String, Object> Inputs;
+    public Date CompletedOn;
+    public String Status;
+    public HashMap<String, Object> Outputs;
     public int StatusCode;
     public List<StepLog> Logs;
-    public DateTime? SuspendedUntil;
-
-    public bool IsComplete();
-    public void RemoveDelimiters();
+    public Date SuspendedUntil;
 }
