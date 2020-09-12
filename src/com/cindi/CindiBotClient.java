@@ -193,8 +193,8 @@ public class CindiBotClient {
     public NewBotKeyResult RegisterBot(String name, String rsaPublicKey) throws IOException, KeyManagementException, NoSuchAlgorithmException {
         String result = SendRequest(Request.Post(this.url + "/api/bot-keys")
                 .bodyString(mapper.writeValueAsString(new Object(){
-                    public String Name = name;
-                    public String RsaPublicKey = rsaPublicKey;
+                    public String BotKeyName = name;
+                    public String PublicEncryptionKey = rsaPublicKey;
                 }), ContentType.APPLICATION_JSON)
                 .connectTimeout(1000)
                 .socketTimeout(1000)).returnContent().asString();
