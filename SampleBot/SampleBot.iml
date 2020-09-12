@@ -9,5 +9,7 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="CindiJava" />
     <orderEntry type="library" name="com.fasterxml.jackson.core:jackson-databind:2.11.2" level="project" />
+    <orderEntry type="library" name="org.apache.httpcomponents:fluent-hc:4.5.12" level="project" />
+    <orderEntry type="library" name="org.bouncycastle:bcprov-jdk15on:1.66" level="project" />
   </component>
 </module>
