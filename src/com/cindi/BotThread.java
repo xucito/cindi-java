@@ -7,11 +7,17 @@ import com.cindi.domain.enums.StepStatuses;
 import com.cindi.requests.NewStepTemplateRequest;
 import com.cindi.requests.StepRequest;
 import com.cindi.requests.UpdateStepRequest;
+import org.bouncycastle.crypto.InvalidCipherTextException;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;
+import java.security.InvalidKeyException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -25,6 +31,7 @@ public abstract class BotThread {
         CindiBotClient client = new CindiBotClient(botName, botUrl);
 
         List<String> registeredIds = new ArrayList<>();
+        HashMap<String, StepTemplate> templateMap = new HashMap<>();
 
         for (StepTemplate template : stepTemplates) {
             System.out.println("Registering " + template.ReferenceId);
@@ -38,6 +45,7 @@ public abstract class BotThread {
             });
             registeredIds.add(template.ReferenceId);
             System.out.println("Successfully registered " + template.ReferenceId);
+            templateMap.put(template.ReferenceId, template);
         }
 
         thread = new Thread() {
@@ -49,6 +57,8 @@ public abstract class BotThread {
                         nextStep = client.GetNextStep(new StepRequest() {
                             String[] StepTemplateIds = registeredIds.stream().toArray(String[]::new);
                         });
+
+
                     } catch (IOException e) {
                         e.printStackTrace();
                     } catch (NoSuchAlgorithmException e) {
@@ -58,6 +68,29 @@ public abstract class BotThread {
                     }
 
                     if (nextStep != null) {
+                        HashMap<String, Object> inputs = new HashMap<>();
+                        StepTemplate template = templateMap.get(nextStep.StepTemplateId);
+                        nextStep.Inputs.forEach((k, v) -> {
+                            String type = template.InputDefinitions.get(k).Type.toLowerCase();
+                            if (template.InputDefinitions.get(k).Type.toLowerCase().equals("secret")) {
+                                try {
+                                    inputs.put(k, CindiBotClient.decrypt((String) v, client.privateKeyRaw));
+                                } catch (NoSuchAlgorithmException e) {
+                                    e.printStackTrace();
+                                } catch (InvalidKeyException e) {
+                                    e.printStackTrace();
+                                } catch (NoSuchPaddingException e) {
+                                    e.printStackTrace();
+                                } catch (BadPaddingException e) {
+                                    e.printStackTrace();
+                                } catch (IllegalBlockSizeException e) {
+                                    e.printStackTrace();
+                                }
+                            } else {
+                                inputs.put(k, v);
+                            }
+                        });
+                        nextStep.Inputs = inputs;
                         System.out.println("Processing step " + nextStep.Id + "...");
                         try {
                             long startTime = System.currentTimeMillis();

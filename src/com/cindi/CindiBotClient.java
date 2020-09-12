@@ -19,12 +19,20 @@ import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.bouncycastle.crypto.AsymmetricBlockCipher;
+import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.crypto.engines.RSAEngine;
+import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.crypto.util.PrivateKeyFactory;
+import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.provider.PEMUtil;
 import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemWriter;
+import sun.misc.BASE64Decoder;
 import sun.net.www.http.HttpClient;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.net.URI;
@@ -33,9 +41,16 @@ import java.security.*;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.util.Base64;
 import java.util.UUID;
 import org.apache.http.client.*;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
@@ -44,10 +59,11 @@ public class CindiBotClient {
 
     public URI url;
     ObjectMapper mapper;
-    String privateKey;
+    public String privateKey;
     String publicKey;
     public String IdKey;
     public Integer Nonce = 0;
+    PrivateKey privateKeyRaw;
 
     public CindiBotClient(String botName, String url)
     {
@@ -66,6 +82,7 @@ public class CindiBotClient {
             KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
             kpg.initialize(2048);
             KeyPair keyPair = generateRSAKeyPair();
+            privateKeyRaw = keyPair.getPrivate();
             privateKey = GetPrivateString(keyPair.getPrivate());
             publicKey = GetPublicString(keyPair.getPublic());
             IdKey = RegisterBot(botName, publicKey).IdKey;
@@ -127,7 +144,6 @@ public class CindiBotClient {
                 .bodyString(mapper.writeValueAsString(request), ContentType.APPLICATION_JSON)
                 .connectTimeout(1000)
                 .socketTimeout(1000), true).returnContent().asString(), new TypeReference<CindiHttpResult<Step>>() {}).Result;
-
     }
     public String PostNewStep(StepInput stepInput) throws IOException, NoSuchAlgorithmException, KeyManagementException {
         return SendRequest(Request.Post(this.url + "/api/steps")
@@ -200,5 +216,12 @@ public class CindiBotClient {
                 .socketTimeout(1000)).returnContent().asString();
         CindiHttpResult<NewBotKeyResult> parsed = mapper.readValue(result, new TypeReference<CindiHttpResult<NewBotKeyResult>>() {});
         return parsed.Result;
+    }
+
+    public static String decrypt(String data, PrivateKey privateKey) throws IllegalBlockSizeException, InvalidKeyException, BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException {
+        Cipher cipher1 = Cipher.getInstance("RSA");
+        cipher1.init(Cipher.DECRYPT_MODE, privateKey);
+        byte[] decStr = cipher1.doFinal(Base64.getDecoder().decode(data));
+        return new String(decStr);
     }
 }
