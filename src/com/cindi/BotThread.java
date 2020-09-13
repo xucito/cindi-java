@@ -57,8 +57,7 @@ public abstract class BotThread {
                         nextStep = client.GetNextStep(new StepRequest() {
                             String[] StepTemplateIds = registeredIds.stream().toArray(String[]::new);
                         });
-
-
+                        
                     } catch (IOException e) {
                         e.printStackTrace();
                     } catch (NoSuchAlgorithmException e) {
@@ -104,6 +103,7 @@ public abstract class BotThread {
                                 client.CompleteStep(new UpdateStepRequest() {
                                     String Status = StepStatuses.Error.toString();
                                     String Log = "Failed to complete step with error: \\n" + Arrays.toString(e.getStackTrace());
+                                    Integer StatusCode = 0;
                                 });
                             } catch (IOException ioException) {
                                 ioException.printStackTrace();
@@ -115,11 +115,11 @@ public abstract class BotThread {
                         }
                     } else {
                         System.out.println("No step found...");
-                try {
-                    Thread.sleep(sleepTime);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                        try {
+                            Thread.sleep(sleepTime);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
                     }
                 }
             }
