@@ -57,7 +57,6 @@ public abstract class BotThread {
                         nextStep = client.GetNextStep(new StepRequest() {
                             String[] StepTemplateIds = registeredIds.stream().toArray(String[]::new);
                         });
-                        
                     } catch (IOException e) {
                         e.printStackTrace();
                     } catch (NoSuchAlgorithmException e) {

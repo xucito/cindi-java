@@ -80,7 +80,7 @@ public class CindiBotClient {
         mapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
         try {
             KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
-            kpg.initialize(2048);
+            kpg.initialize(4096);
             KeyPair keyPair = generateRSAKeyPair();
             privateKeyRaw = keyPair.getPrivate();
             privateKey = GetPrivateString(keyPair.getPrivate());
