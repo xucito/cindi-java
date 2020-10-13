@@ -10,4 +10,5 @@ public class UpdateStepRequest {
     public String Status;
     public Integer StatusCode;
     public String Log;
+    public String EncryptionKey;
 }

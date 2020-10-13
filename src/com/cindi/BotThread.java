@@ -7,6 +7,8 @@ import com.cindi.domain.enums.StepStatuses;
 import com.cindi.requests.NewStepTemplateRequest;
 import com.cindi.requests.StepRequest;
 import com.cindi.requests.UpdateStepRequest;
+import com.cindi.utilities.SecurityUtility;
+import com.cindi.valueobjects.NextStep;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
@@ -48,83 +50,122 @@ public abstract class BotThread {
             templateMap.put(template.ReferenceId, template);
         }
 
-        thread = new Thread() {
-            public void run() {
-                while (true) {
-                    System.out.println("Getting next step...");
-                    Step nextStep = null;
-                    try {
-                        nextStep = client.GetNextStep(new StepRequest() {
-                            String[] StepTemplateIds = registeredIds.stream().toArray(String[]::new);
-                        });
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    } catch (NoSuchAlgorithmException e) {
-                        e.printStackTrace();
-                    } catch (KeyManagementException e) {
-                        e.printStackTrace();
-                    }
+        while(true)
+        {
+            runOnce(client, registeredIds, templateMap);
+        }
 
-                    if (nextStep != null) {
-                        HashMap<String, Object> inputs = new HashMap<>();
-                        StepTemplate template = templateMap.get(nextStep.StepTemplateId);
-                        nextStep.Inputs.forEach((k, v) -> {
-                            String type = template.InputDefinitions.get(k).Type.toLowerCase();
-                            if (template.InputDefinitions.get(k).Type.toLowerCase().equals("secret")) {
-                                try {
-                                    inputs.put(k, CindiBotClient.decrypt((String) v, client.privateKeyRaw));
-                                } catch (NoSuchAlgorithmException e) {
-                                    e.printStackTrace();
-                                } catch (InvalidKeyException e) {
-                                    e.printStackTrace();
-                                } catch (NoSuchPaddingException e) {
-                                    e.printStackTrace();
-                                } catch (BadPaddingException e) {
-                                    e.printStackTrace();
-                                } catch (IllegalBlockSizeException e) {
-                                    e.printStackTrace();
-                                }
-                            } else {
-                                inputs.put(k, v);
-                            }
-                        });
-                        nextStep.Inputs = inputs;
-                        System.out.println("Processing step " + nextStep.Id + "...");
-                        try {
-                            long startTime = System.currentTimeMillis();
-                            UpdateStepRequest update = HandleStep(nextStep);
-                            update.Id = nextStep.Id;
-                            client.CompleteStep(update);
-                            System.out.println("Successfully processed step " + nextStep.Id + " took " + (System.currentTimeMillis() - startTime) + "ms.");
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                            try {
-                                client.CompleteStep(new UpdateStepRequest() {
-                                    String Status = StepStatuses.Error.toString();
-                                    String Log = "Failed to complete step with error: \\n" + Arrays.toString(e.getStackTrace());
-                                    Integer StatusCode = 0;
-                                });
-                            } catch (IOException ioException) {
-                                ioException.printStackTrace();
-                            } catch (NoSuchAlgorithmException noSuchAlgorithmException) {
-                                noSuchAlgorithmException.printStackTrace();
-                            } catch (KeyManagementException keyManagementException) {
-                                keyManagementException.printStackTrace();
-                            }
-                        }
-                    } else {
-                        System.out.println("No step found...");
-                        try {
-                            Thread.sleep(sleepTime);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
+        /*thread = new Thread() {
+            public void run() {
+                while(true) {
+                    runOnce(client, registeredIds, templateMap);
+                    try {
+                        Thread.sleep(sleepTime);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
                     }
                 }
             }
         };
 
-        thread.start();
+        thread.start();*/
+
+    }
+
+    public void runOnce(CindiBotClient client, List<String> registeredIds, HashMap<String, StepTemplate> templateMap) {
+            System.out.println("Getting next step...");
+            Step nextStep = null;
+            NextStep result = null;
+            try {
+                result = client.GetNextStep(new StepRequest() {
+                    String[] StepTemplateIds = registeredIds.stream().toArray(String[]::new);
+                });
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (NoSuchAlgorithmException e) {
+                e.printStackTrace();
+            } catch (KeyManagementException e) {
+                e.printStackTrace();
+            }
+
+            if (result.Step != null) {
+                nextStep = result.Step;
+                HashMap<String, Object> inputs = new HashMap<>();
+                StepTemplate template = templateMap.get(nextStep.StepTemplateId);
+                String encryptionKey = result.EncryptionKey;
+
+                try {
+                    String finalKey = SecurityUtility.decryptRSA(encryptionKey, client.privateKeyRaw);
+                    nextStep.Inputs.forEach((k, v) -> {
+                        if (template.InputDefinitions.get(k).Type.toLowerCase().equals("secret")) {
+                            try {
+                                inputs.put(k, SecurityUtility.decryptAES(finalKey,(String) v));
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        } else {
+                            inputs.put(k, v);
+                        }
+                    });
+                } catch (NoSuchAlgorithmException e) {
+                    e.printStackTrace();
+                } catch (InvalidKeyException e) {
+                    e.printStackTrace();
+                } catch (NoSuchPaddingException e) {
+                    e.printStackTrace();
+                } catch (BadPaddingException e) {
+                    e.printStackTrace();
+                } catch (IllegalBlockSizeException e) {
+                    e.printStackTrace();
+                } catch (java.lang.Exception e) {
+                    e.printStackTrace();
+                }
+                nextStep.Inputs = inputs;
+                System.out.println("Processing step " + nextStep.Id + "...");
+                try {
+                    long startTime = System.currentTimeMillis();
+                    UpdateStepRequest update = HandleStep(nextStep);
+                    update.Id = nextStep.Id;
+                    String finalKey = SecurityUtility.GenerateRandomString(32);
+
+                    HashMap<String, Object> outputs = new HashMap<>();
+                    System.out.println(update.Status);
+                    if(update.Outputs != null) {
+                        update.Outputs.forEach((k, v) -> {
+                            if (template.OutputDefinitions.get(k).Type.toLowerCase().equals("secret")) {
+                                try {
+                                    outputs.put(k, SecurityUtility.encryptAES(finalKey, (String) v));
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
+                            } else {
+                                outputs.put(k, v);
+                            }
+                        });
+                    }
+                    update.EncryptionKey= SecurityUtility.encryptRSA(finalKey, client.privateKeyRaw);
+                    update.Outputs = outputs;
+                    client.CompleteStep(update);
+                    System.out.println("Successfully processed step " + nextStep.Id + " took " + (System.currentTimeMillis() - startTime) + "ms.");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    try {
+                        client.CompleteStep(new UpdateStepRequest() {
+                            String Status = StepStatuses.Error.toString();
+                            String Log = "Failed to complete step with error: \\n" + Arrays.toString(e.getStackTrace());
+                            Integer StatusCode = 0;
+                        });
+                    } catch (IOException ioException) {
+                        ioException.printStackTrace();
+                    } catch (NoSuchAlgorithmException noSuchAlgorithmException) {
+                        noSuchAlgorithmException.printStackTrace();
+                    } catch (KeyManagementException keyManagementException) {
+                        keyManagementException.printStackTrace();
+                    }
+                }
+            } else {
+                System.out.println("No step found...");
+            }
 
     }
 

@@ -3,6 +3,8 @@ package com.cindi;
 import com.cindi.domain.Step;
 import com.cindi.domain.WorkflowTemplate;
 import com.cindi.requests.*;
+import com.cindi.utilities.SecurityUtility;
+import com.cindi.valueobjects.NextStep;
 import com.cindi.valueobjects.StepInput;
 import com.cindi.valueobjects.WorkflowInput;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
@@ -25,6 +27,7 @@ import org.bouncycastle.crypto.engines.RSAEngine;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
+import org.bouncycastle.jcajce.provider.symmetric.AES;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.provider.PEMUtil;
 import org.bouncycastle.util.io.pem.PemObject;
@@ -42,15 +45,16 @@ import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.InvalidKeySpecException;
+import java.security.spec.KeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Base64;
 import java.util.UUID;
 import org.apache.http.client.*;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
+import javax.crypto.*;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.SecretKeySpec;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
@@ -81,10 +85,10 @@ public class CindiBotClient {
         try {
             KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
             kpg.initialize(4096);
-            KeyPair keyPair = generateRSAKeyPair();
+            KeyPair keyPair = SecurityUtility.generateRSAKeyPair();
             privateKeyRaw = keyPair.getPrivate();
-            privateKey = GetPrivateString(keyPair.getPrivate());
-            publicKey = GetPublicString(keyPair.getPublic());
+            privateKey = SecurityUtility.GetPrivateString(keyPair.getPrivate());
+            publicKey = SecurityUtility.GetPublicString(keyPair.getPublic());
             IdKey = RegisterBot(botName, publicKey).IdKey;
         } catch (NoSuchAlgorithmException | NoSuchProviderException | IOException | KeyManagementException e) {
             e.printStackTrace();
@@ -92,35 +96,6 @@ public class CindiBotClient {
 
     }
 
-    public static String GetPublicString(PublicKey key) throws IOException
-    {
-        PublicKey publicKey = key;
-        StringWriter writer = new StringWriter();
-        PemWriter pemWriter = new PemWriter(writer);
-        pemWriter.writeObject(new PemObject("PUBLIC KEY", publicKey.getEncoded()));
-        pemWriter.flush();
-        pemWriter.close();
-        return writer.toString();
-    }
-
-    public static String GetPrivateString(PrivateKey key) throws IOException
-    {
-        PrivateKey privateKey = key;
-        StringWriter writer = new StringWriter();
-        PemWriter pemWriter = new PemWriter(writer);
-        pemWriter.writeObject(new PemObject("Private KEY", privateKey.getEncoded()));
-        pemWriter.flush();
-        pemWriter.close();
-        return writer.toString();
-    }
-
-    private static KeyPair generateRSAKeyPair() throws NoSuchAlgorithmException, NoSuchProviderException {
-        KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA", "BC");
-        generator.initialize(2048);
-
-        KeyPair keyPair = generator.generateKeyPair();
-        return keyPair;
-    }
 
 
     public String AddStepLog(UUID stepId, String log) throws IOException, NoSuchAlgorithmException, KeyManagementException {
@@ -139,12 +114,17 @@ public class CindiBotClient {
                 .socketTimeout(1000), true).returnContent().asString();
     }
 
-    public Step GetNextStep(StepRequest request) throws IOException, NoSuchAlgorithmException, KeyManagementException {
-        return mapper.readValue(SendRequest(Request.Post(this.url + "/api/steps/assignment-requests")
+    public NextStep GetNextStep(StepRequest request) throws IOException, NoSuchAlgorithmException, KeyManagementException {
+        CindiHttpResult<Step> value = mapper.readValue(SendRequest(Request.Post(this.url + "/api/steps/assignment-requests")
                 .bodyString(mapper.writeValueAsString(request), ContentType.APPLICATION_JSON)
                 .connectTimeout(1000)
-                .socketTimeout(1000), true).returnContent().asString(), new TypeReference<CindiHttpResult<Step>>() {}).Result;
+                .socketTimeout(1000), true).returnContent().asString(), new TypeReference<CindiHttpResult<Step>>() {});
+        NextStep result =  new NextStep();
+        result.Step = value.Result;
+        result.EncryptionKey = value.EncryptionKey;
+        return result;
     }
+
     public String PostNewStep(StepInput stepInput) throws IOException, NoSuchAlgorithmException, KeyManagementException {
         return SendRequest(Request.Post(this.url + "/api/steps")
                 .bodyString(mapper.writeValueAsString(stepInput), ContentType.APPLICATION_JSON)
@@ -218,10 +198,4 @@ public class CindiBotClient {
         return parsed.Result;
     }
 
-    public static String decrypt(String data, PrivateKey privateKey) throws IllegalBlockSizeException, InvalidKeyException, BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException {
-        Cipher cipher1 = Cipher.getInstance("RSA");
-        cipher1.init(Cipher.DECRYPT_MODE, privateKey);
-        byte[] decStr = cipher1.doFinal(Base64.getDecoder().decode(data));
-        return new String(decStr);
-    }
 }

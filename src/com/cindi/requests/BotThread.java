@@ -4,6 +4,7 @@ import com.cindi.CindiBotClient;
 import com.cindi.domain.DynamicDataDescription;
 import com.cindi.domain.Step;
 import com.cindi.domain.StepTemplate;
+import com.cindi.valueobjects.NextStep;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.io.IOException;
@@ -35,7 +36,7 @@ public class BotThread {
 
         while(true)
         {
-            Step nextStep = client.GetNextStep(new StepRequest(){
+            NextStep nextStep = client.GetNextStep(new StepRequest(){
                 String[] StepTemplateIds = registeredIds.stream().toArray(String[]::new);
             });
 
@@ -44,6 +45,6 @@ public class BotThread {
 
     }
 
-    public UpdateStepRequest HandleStep(Step step){ throw new NotImplementedException();
+    public UpdateStepRequest HandleStep(NextStep step){ throw new NotImplementedException();
     }
 }

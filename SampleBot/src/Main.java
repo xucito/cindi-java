@@ -11,14 +11,15 @@ import java.security.NoSuchAlgorithmException;
 public class Main extends CindiBotFactory {
     public static void main(String[] args) throws IOException, NoSuchAlgorithmException, KeyManagementException {
         System.out.println("Hello World");
-        Integer threads = 10;
+        Integer threads = 1;
 
         StepLibrary.mapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
 
         for(Integer i = 0; i < threads; i++ )
         {
         StartBot(SampleBotThread.class,"BOT", "https://localhost:5021", new StepTemplate[] {
-                StepLibrary.StepTemplate()
+                StepLibrary.StepTemplate(),
+                StepLibrary.SecretStepTemplate()
         }, 1000);}
         System.out.println("All ran");
 

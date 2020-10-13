@@ -36,4 +36,24 @@ public class StepLibrary {
                 "            }\n" +
                 "        }", StepTemplate.class);
     }
+
+    public static StepTemplate SecretStepTemplate() throws JsonProcessingException {
+        return mapper.readValue("{\n" +
+                "            \"referenceId\": \"Pass_Password:0\",\n" +
+                "            \"description\": null,\n" +
+                "            \"allowDynamicInputs\": false,\n" +
+                "            \"inputDefinitions\": {\n" +
+                "                \"secret\": {\n" +
+                "                    \"description\": null,\n" +
+                "                    \"type\": \"secret\"\n" +
+                "                }\n" +
+                "            },\n" +
+                "            \"outputDefinitions\": {\n" +
+                "                \"secret\": {\n" +
+                "                    \"description\": null,\n" +
+                "                    \"type\": \"secret\"\n" +
+                "                }\n" +
+                "            }\n" +
+                "        }", StepTemplate.class);
+    }
 }
