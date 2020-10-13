@@ -50,12 +50,12 @@ public abstract class BotThread {
             templateMap.put(template.ReferenceId, template);
         }
 
-        while(true)
+        /*while(true)
         {
             runOnce(client, registeredIds, templateMap);
-        }
+        }*/
 
-        /*thread = new Thread() {
+        thread = new Thread() {
             public void run() {
                 while(true) {
                     runOnce(client, registeredIds, templateMap);
@@ -68,7 +68,7 @@ public abstract class BotThread {
             }
         };
 
-        thread.start();*/
+        thread.start();
 
     }
 
@@ -130,7 +130,7 @@ public abstract class BotThread {
 
                     HashMap<String, Object> outputs = new HashMap<>();
                     System.out.println(update.Status);
-                    if(update.Outputs != null) {
+                    if(update.Outputs != null && update.Outputs.size() > 0) {
                         update.Outputs.forEach((k, v) -> {
                             if (template.OutputDefinitions.get(k).Type.toLowerCase().equals("secret")) {
                                 try {
