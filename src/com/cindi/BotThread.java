@@ -29,7 +29,7 @@ public abstract class BotThread {
 
     Thread thread;
 
-    public void Start(String botName, String botUrl, StepTemplate[] stepTemplates, Integer sleepTime) throws NoSuchAlgorithmException, IOException, KeyManagementException {
+    public void Start(String botName, String botUrl, StepTemplate[] stepTemplates, Integer sleepTime) throws Exception {
         CindiBotClient client = new CindiBotClient(botName, botUrl);
 
         List<String> registeredIds = new ArrayList<>();
@@ -55,8 +55,8 @@ public abstract class BotThread {
             runOnce(client, registeredIds, templateMap);
         }*/
 
-        thread = new Thread() {
-            public void run() {
+        /*thread = new Thread() {
+            public void run() {*/
                 while(true) {
                     runOnce(client, registeredIds, templateMap);
                     try {
@@ -65,10 +65,10 @@ public abstract class BotThread {
                         e.printStackTrace();
                     }
                 }
-            }
-        };
+          /*   }
+       };
 
-        thread.start();
+        thread.start();*/
 
     }
 

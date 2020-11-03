@@ -20,21 +20,13 @@ import java.util.List;
 public abstract class CindiBotFactory {
     public static ArrayList<BotThread> bots =  new ArrayList<>();
 
-    public static void StartBot(Class<? extends BotThread> botType ,String botName, String url, StepTemplate[] stepTemplates, Integer sleepTime){
+    public static void StartBot(Class<? extends BotThread> botType ,String botName, String url, StepTemplate[] stepTemplates, Integer sleepTime) throws Exception {
         try {
             BotThread newBot = botType.newInstance();
             newBot.Start(botName, url, stepTemplates, sleepTime);
             bots.add(newBot);
-        } catch (InstantiationException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (KeyManagementException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
+            throw e;
         }
     }
 }
