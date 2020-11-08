@@ -58,12 +58,12 @@ public abstract class BotThread {
         /*thread = new Thread() {
             public void run() {*/
         while (true) {
-            runOnce(client, registeredIds, templateMap);
             try {
-                Thread.sleep(sleepTime);
+                runOnce(client, registeredIds, templateMap);
             } catch (Exception e) {
-                throw e;
+                System.out.println("Encountered error "  + e.getMessage() + "\n" + e.getStackTrace());
             }
+            Thread.sleep(sleepTime);
         }
           /*   }
        };
