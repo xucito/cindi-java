@@ -68,6 +68,7 @@ public class CindiBotClient {
     public String IdKey;
     public Integer Nonce = 0;
     PrivateKey privateKeyRaw;
+    Executor ex;
 
     public CindiBotClient(String botName, String url)
     {
@@ -82,7 +83,28 @@ public class CindiBotClient {
         mapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         mapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
+
+
         try {
+            TrustManager[] trustAllCerts = new TrustManager[]{
+                    new X509TrustManager() {
+                        public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+                            return null;
+                        }
+
+                        public void checkClientTrusted(X509Certificate[] certs, String authType) {
+                        }
+
+                        public void checkServerTrusted(X509Certificate[] certs, String authType) {
+                        }
+                    }
+            };
+
+            SSLContext sc = SSLContext.getInstance("SSL");
+            sc.init(null, trustAllCerts, new SecureRandom());
+            CloseableHttpClient httpClient = HttpClients.custom().setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE).setSslcontext(sc).build();
+            ex = Executor.newInstance(httpClient);
+
             KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
             kpg.initialize(4096);
             KeyPair keyPair = SecurityUtility.generateRSAKeyPair();
@@ -158,27 +180,13 @@ public class CindiBotClient {
 
     public Response SendRequest(Request r, Boolean authorize) throws NoSuchAlgorithmException, KeyManagementException, IOException {
         try {
-            TrustManager[] trustAllCerts = new TrustManager[] {
-                    new X509TrustManager() {
-                        public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-                            return null;
-                        }
-                        public void checkClientTrusted(X509Certificate[] certs, String authType) {  }
-
-                        public void checkServerTrusted(X509Certificate[] certs, String authType) {  }
-                    }
-            };
-
-            SSLContext sc = SSLContext.getInstance("SSL");
-            sc.init(null, trustAllCerts, new SecureRandom());
-            CloseableHttpClient httpClient = HttpClients.custom().setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE).setSslcontext(sc).build();
             if(authorize)
             {
                 r.addHeader("BotKey",IdKey);
                 r.addHeader("Nonce", Nonce.toString());
                 Nonce++;
             }
-            return Executor.newInstance(httpClient).execute(r
+            return ex.execute(r
                     .connectTimeout(30000)
                     .socketTimeout(30000));
         } catch (Exception e) {
