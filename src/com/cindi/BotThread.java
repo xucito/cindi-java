@@ -27,11 +27,8 @@ import java.util.List;
 
 public abstract class BotThread {
 
-    Thread thread;
-
     public void Start(String botName, String botUrl, StepTemplate[] stepTemplates, Integer sleepTime) throws Exception {
         CindiBotClient client = new CindiBotClient(botName, botUrl);
-
         List<String> registeredIds = new ArrayList<>();
         HashMap<String, StepTemplate> templateMap = new HashMap<>();
 
@@ -50,26 +47,14 @@ public abstract class BotThread {
             templateMap.put(template.ReferenceId, template);
         }
 
-        /*while(true)
-        {
-            runOnce(client, registeredIds, templateMap);
-        }*/
-
-        /*thread = new Thread() {
-            public void run() {*/
         while (true) {
             try {
                 runOnce(client, registeredIds, templateMap);
             } catch (Exception e) {
-                System.out.println("Encountered error "  + e.getMessage() + "\n" + e.getStackTrace());
+                System.out.println("Encountered error " + e.getMessage() + "\n" + e.getStackTrace());
             }
             Thread.sleep(sleepTime);
         }
-          /*   }
-       };
-
-        thread.start();*/
-
     }
 
     public void runOnce(CindiBotClient client, List<String> registeredIds, HashMap<String, StepTemplate> templateMap) throws Exception {

@@ -125,22 +125,22 @@ public class CindiBotClient {
                 .bodyString(mapper.writeValueAsString(new Object() {
                     String Log = log;
                 }), ContentType.APPLICATION_JSON)
-                .connectTimeout(1000)
-                .socketTimeout(1000), true).returnContent().asString();
+                .connectTimeout(60000)
+                .socketTimeout(60000), true).returnContent().asString();
     }
 
     public String CompleteStep(UpdateStepRequest request) throws IOException, NoSuchAlgorithmException, KeyManagementException {
         return SendRequest(Request.Put(this.url + "/api/steps/" + request.Id)
                 .bodyString(mapper.writeValueAsString(request), ContentType.APPLICATION_JSON)
-                .connectTimeout(1000)
-                .socketTimeout(1000), true).returnContent().asString();
+                .connectTimeout(60000)
+                .socketTimeout(60000), true).returnContent().asString();
     }
 
     public NextStep GetNextStep(StepRequest request) throws IOException, NoSuchAlgorithmException, KeyManagementException {
         CindiHttpResult<Step> value = mapper.readValue(SendRequest(Request.Post(this.url + "/api/steps/assignment-requests")
                 .bodyString(mapper.writeValueAsString(request), ContentType.APPLICATION_JSON)
-                .connectTimeout(1000)
-                .socketTimeout(1000), true).returnContent().asString(), new TypeReference<CindiHttpResult<Step>>() {});
+                .connectTimeout(60000)
+                .socketTimeout(60000), true).returnContent().asString(), new TypeReference<CindiHttpResult<Step>>() {});
         NextStep result =  new NextStep();
         result.Step = value.Result;
         result.EncryptionKey = value.EncryptionKey;
@@ -150,27 +150,27 @@ public class CindiBotClient {
     public String PostNewStep(StepInput stepInput) throws IOException, NoSuchAlgorithmException, KeyManagementException {
         return SendRequest(Request.Post(this.url + "/api/steps")
                 .bodyString(mapper.writeValueAsString(stepInput), ContentType.APPLICATION_JSON)
-                .connectTimeout(1000)
-                .socketTimeout(1000), true).returnContent().asString();
+                .connectTimeout(60000)
+                .socketTimeout(60000), true).returnContent().asString();
     }
     public String PostNewWorkflow(WorkflowInput input) throws IOException, NoSuchAlgorithmException, KeyManagementException {
         return SendRequest(Request.Post(this.url + "/api/workflows")
                 .bodyString(mapper.writeValueAsString(input), ContentType.APPLICATION_JSON)
-                .connectTimeout(1000)
-                .socketTimeout(1000), true).returnContent().asString();
+                .connectTimeout(60000)
+                .socketTimeout(60000), true).returnContent().asString();
     }
     public String PostNewWorkflowTemplate(WorkflowTemplate WorkflowTemplate) throws IOException, NoSuchAlgorithmException, KeyManagementException {
         return SendRequest(Request.Post(this.url + "/api/workflow-templates")
                 .bodyString(mapper.writeValueAsString(WorkflowTemplate), ContentType.APPLICATION_JSON)
-                .connectTimeout(1000)
-                .socketTimeout(1000), true).returnContent().asString();
+                .connectTimeout(60000)
+                .socketTimeout(60000), true).returnContent().asString();
     }
 
     public String PostStepTemplate(NewStepTemplateRequest stepTemplate) throws IOException, NoSuchAlgorithmException, KeyManagementException {
         return SendRequest(Request.Post(this.url + "/api/step-templates")
                 .bodyString(mapper.writeValueAsString(stepTemplate), ContentType.APPLICATION_JSON)
-                .connectTimeout(1000)
-                .socketTimeout(1000), true).returnContent().asString();
+                .connectTimeout(60000)
+                .socketTimeout(60000), true).returnContent().asString();
 
     }
     public Response SendRequest(Request r) throws NoSuchAlgorithmException, KeyManagementException, IOException {
@@ -187,8 +187,8 @@ public class CindiBotClient {
                 Nonce++;
             }
             return ex.execute(r
-                    .connectTimeout(30000)
-                    .socketTimeout(30000));
+                    .connectTimeout(60000)
+                    .socketTimeout(60000));
         } catch (Exception e) {
             throw e;
         }
@@ -200,8 +200,8 @@ public class CindiBotClient {
                     public String BotKeyName = name;
                     public String PublicEncryptionKey = rsaPublicKey;
                 }), ContentType.APPLICATION_JSON)
-                .connectTimeout(1000)
-                .socketTimeout(1000)).returnContent().asString();
+                .connectTimeout(60000)
+                .socketTimeout(60000)).returnContent().asString();
         CindiHttpResult<NewBotKeyResult> parsed = mapper.readValue(result, new TypeReference<CindiHttpResult<NewBotKeyResult>>() {});
         return parsed.Result;
     }
